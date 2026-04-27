@@ -239,6 +239,19 @@ export const coupons = sqliteTable("coupons", {
     .$defaultFn(() => new Date().toISOString()),
 });
 
+export const userGamification = sqliteTable("user_gamification", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id),
+  totalPoints: integer("total_points").notNull().default(0),
+  currentLevel: integer("current_level").notNull().default(1),
+  currentStreak: integer("current_streak").notNull().default(0),
+  longestStreak: integer("longest_streak").notNull().default(0),
+  lastActivityDate: text("last_activity_date"),
+});
+
 export const videoWatchEvents = sqliteTable("video_watch_events", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id")
