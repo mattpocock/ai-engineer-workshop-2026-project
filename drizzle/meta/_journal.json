@@ -29,6 +29,13 @@
       "when": 1746403200000,
       "tag": "0003_gamification",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1746489600000,
+      "tag": "0004_streak_timezone",
+      "breakpoints": true
     }
   ]
 }

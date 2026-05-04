@@ -7,7 +7,7 @@ import { getCurrentUserId } from "~/lib/session";
 import { Card, CardContent, CardFooter, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { AlertTriangle, BookOpen, CheckCircle2, GraduationCap, PlayCircle, Star, Trophy } from "lucide-react";
+import { AlertTriangle, BookOpen, CheckCircle2, Flame, GraduationCap, PlayCircle, Star, Trophy } from "lucide-react";
 import { CourseImage } from "~/components/course-image";
 import { data, isRouteErrorResponse } from "react-router";
 
@@ -65,8 +65,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   const currentLevel = stats?.currentLevel ?? 1;
   const levelName = getLevelName(currentLevel);
   const nextLevelPoints = getNextLevelPoints(currentLevel);
+  const currentStreak = stats?.currentStreak ?? 0;
 
-  return { inProgressCourses, completedCourses, totalPoints, levelName, nextLevelPoints };
+  return { inProgressCourses, completedCourses, totalPoints, levelName, nextLevelPoints, currentStreak };
 }
 
 function DashboardCardSkeleton() {
@@ -109,7 +110,7 @@ export function HydrateFallback() {
 }
 
 export default function Dashboard({ loaderData }: Route.ComponentProps) {
-  const { inProgressCourses, completedCourses, totalPoints, levelName, nextLevelPoints } = loaderData;
+  const { inProgressCourses, completedCourses, totalPoints, levelName, nextLevelPoints, currentStreak } = loaderData;
   const totalCourses = inProgressCourses.length + completedCourses.length;
 
   return (
@@ -144,6 +145,13 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
           <div>
             <p className="text-xs text-muted-foreground">Total Points</p>
             <p className="font-semibold">{totalPoints.toLocaleString()}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Flame className="size-5 text-orange-500" />
+          <div>
+            <p className="text-xs text-muted-foreground">Streak</p>
+            <p className="font-semibold">{currentStreak} day{currentStreak !== 1 ? "s" : ""}</p>
           </div>
         </div>
         {nextLevelPoints !== null && (

@@ -39,11 +39,12 @@ export function updateUser(
   id: number,
   name: string,
   email: string,
-  bio: string | null
+  bio: string | null,
+  timezone: string | null = null
 ) {
   return db
     .update(users)
-    .set({ name, email, bio })
+    .set({ name, email, bio, timezone })
     .where(eq(users.id, id))
     .returning()
     .get();

@@ -1,6 +1,7 @@
 import { eq, and, sum } from "drizzle-orm";
 import { db } from "~/db";
-import { pointEvents, userStats, PointAction } from "~/db/schema";
+import { pointEvents, userStats, users, PointAction } from "~/db/schema";
+import { updateStreak } from "~/services/streakService";
 
 const POINT_VALUES: Record<PointAction, number> = {
   [PointAction.LessonComplete]: 10,
@@ -49,7 +50,7 @@ export function awardPoints(
   action: PointAction,
   referenceId: number
 ): number {
-  return db.transaction((tx) => {
+  const points = db.transaction((tx) => {
     const existing = tx
       .select()
       .from(pointEvents)
@@ -64,9 +65,9 @@ export function awardPoints(
 
     if (existing) return 0;
 
-    const points = POINT_VALUES[action];
+    const pts = POINT_VALUES[action];
 
-    tx.insert(pointEvents).values({ userId, action, referenceId, points }).run();
+    tx.insert(pointEvents).values({ userId, action, referenceId, points: pts }).run();
 
     const totalResult = tx
       .select({ total: sum(pointEvents.points) })
@@ -96,6 +97,17 @@ export function awardPoints(
         .run();
     }
 
-    return points;
+    return pts;
   });
+
+  if (points > 0) {
+    const user = db
+      .select({ timezone: users.timezone })
+      .from(users)
+      .where(eq(users.id, userId))
+      .get();
+    updateStreak(userId, user?.timezone ?? "UTC", new Date());
+  }
+
+  return points;
 }

@@ -15,9 +15,32 @@ import { UserRole } from "~/db/schema";
 import { AlertTriangle } from "lucide-react";
 import { data, isRouteErrorResponse, Link } from "react-router";
 
+const TIMEZONES = [
+  "UTC",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Toronto",
+  "America/Vancouver",
+  "America/Sao_Paulo",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/Moscow",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Asia/Shanghai",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+];
+
 const settingsSchema = z.object({
   name: z.string().trim().min(1, "Name cannot be empty."),
   bio: z.string().trim().optional(),
+  timezone: z.string().optional(),
 });
 
 export function meta() {
@@ -49,6 +72,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       email: currentUser.email,
       bio: currentUser.bio,
       role: currentUser.role,
+      timezone: currentUser.timezone,
     },
   };
 }
@@ -72,9 +96,9 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ errors: parsed.errors }, { status: 400 });
   }
 
-  const { name, bio } = parsed.data;
+  const { name, bio, timezone } = parsed.data;
 
-  updateUser(currentUser.id, name, currentUser.email, bio || null);
+  updateUser(currentUser.id, name, currentUser.email, bio || null, timezone || null);
   return { success: true };
 }
 
@@ -139,6 +163,24 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               />
               <p className="text-xs text-muted-foreground">
                 Email cannot be changed.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="timezone">Timezone</Label>
+              <select
+                id="timezone"
+                name="timezone"
+                defaultValue={user.timezone ?? "UTC"}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                {TIMEZONES.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Used for accurate streak day boundaries.
               </p>
             </div>
             {user.role === UserRole.Instructor && (
