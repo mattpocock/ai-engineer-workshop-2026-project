@@ -7,7 +7,9 @@ import {
   courses,
   enrollments,
   LessonProgressStatus,
+  PointAction,
 } from "~/db/schema";
+import { awardPoints } from "~/services/gamificationService";
 
 // ─── Progress Service ───
 // Handles lesson completion tracking and course progress calculation.
@@ -58,8 +60,9 @@ export function getLessonProgressForCourse(userId: number, courseId: number) {
 export function markLessonComplete(userId: number, lessonId: number) {
   const existing = getLessonProgress(userId, lessonId);
 
+  let progress;
   if (existing) {
-    return db
+    progress = db
       .update(lessonProgress)
       .set({
         status: LessonProgressStatus.Completed,
@@ -68,18 +71,22 @@ export function markLessonComplete(userId: number, lessonId: number) {
       .where(eq(lessonProgress.id, existing.id))
       .returning()
       .get();
+  } else {
+    progress = db
+      .insert(lessonProgress)
+      .values({
+        userId,
+        lessonId,
+        status: LessonProgressStatus.Completed,
+        completedAt: new Date().toISOString(),
+      })
+      .returning()
+      .get();
   }
 
-  return db
-    .insert(lessonProgress)
-    .values({
-      userId,
-      lessonId,
-      status: LessonProgressStatus.Completed,
-      completedAt: new Date().toISOString(),
-    })
-    .returning()
-    .get();
+  awardPoints(userId, PointAction.LessonComplete, lessonId);
+
+  return progress;
 }
 
 export function markLessonInProgress(userId: number, lessonId: number) {

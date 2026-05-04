@@ -2,11 +2,12 @@ import { Link } from "react-router";
 import type { Route } from "./+types/dashboard";
 import { getUserEnrolledCourses } from "~/services/enrollmentService";
 import { calculateProgress, getCompletedLessonCount, getTotalLessonCount, getNextIncompleteLesson } from "~/services/progressService";
+import { getUserStats, getLevelName, getNextLevelPoints } from "~/services/gamificationService";
 import { getCurrentUserId } from "~/lib/session";
 import { Card, CardContent, CardFooter, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { AlertTriangle, BookOpen, CheckCircle2, GraduationCap, PlayCircle } from "lucide-react";
+import { AlertTriangle, BookOpen, CheckCircle2, GraduationCap, PlayCircle, Star, Trophy } from "lucide-react";
 import { CourseImage } from "~/components/course-image";
 import { data, isRouteErrorResponse } from "react-router";
 
@@ -59,7 +60,13 @@ export async function loader({ request }: Route.LoaderArgs) {
   const completedCourses = coursesWithProgress.filter((c) => c.isCompleted);
   const inProgressCourses = coursesWithProgress.filter((c) => !c.isCompleted);
 
-  return { inProgressCourses, completedCourses };
+  const stats = getUserStats(currentUserId);
+  const totalPoints = stats?.totalPoints ?? 0;
+  const currentLevel = stats?.currentLevel ?? 1;
+  const levelName = getLevelName(currentLevel);
+  const nextLevelPoints = getNextLevelPoints(currentLevel);
+
+  return { inProgressCourses, completedCourses, totalPoints, levelName, nextLevelPoints };
 }
 
 function DashboardCardSkeleton() {
@@ -102,7 +109,7 @@ export function HydrateFallback() {
 }
 
 export default function Dashboard({ loaderData }: Route.ComponentProps) {
-  const { inProgressCourses, completedCourses } = loaderData;
+  const { inProgressCourses, completedCourses, totalPoints, levelName, nextLevelPoints } = loaderData;
   const totalCourses = inProgressCourses.length + completedCourses.length;
 
   return (
@@ -121,6 +128,34 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
         <p className="mt-1 text-muted-foreground">
           Track your learning progress
         </p>
+      </div>
+
+      {/* Stats Bar */}
+      <div className="mb-8 flex flex-wrap gap-4 rounded-lg border bg-card p-4">
+        <div className="flex items-center gap-2">
+          <Trophy className="size-5 text-yellow-500" />
+          <div>
+            <p className="text-xs text-muted-foreground">Level</p>
+            <p className="font-semibold">{levelName}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Star className="size-5 text-primary" />
+          <div>
+            <p className="text-xs text-muted-foreground">Total Points</p>
+            <p className="font-semibold">{totalPoints.toLocaleString()}</p>
+          </div>
+        </div>
+        {nextLevelPoints !== null && (
+          <div className="flex items-center gap-2">
+            <div>
+              <p className="text-xs text-muted-foreground">Next Level</p>
+              <p className="font-semibold text-muted-foreground">
+                {(nextLevelPoints - totalPoints).toLocaleString()} pts away
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {totalCourses === 0 ? (

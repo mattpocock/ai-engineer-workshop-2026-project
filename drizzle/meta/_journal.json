@@ -22,6 +22,13 @@
       "when": 1770650640202,
       "tag": "0002_lying_shriek",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1746403200000,
+      "tag": "0003_gamification",
+      "breakpoints": true
     }
   ]
 }
