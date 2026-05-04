@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import { createTestDb, seedBaseData } from "~/test/setup";
 import * as schema from "~/db/schema";
 
@@ -218,6 +219,43 @@ describe("enrollmentService", () => {
       expect(result).toBeDefined();
       expect(result!.completedAt).toBeDefined();
       expect(result!.completedAt).not.toBeNull();
+    });
+
+    it("awards 100 points to the user", () => {
+      enrollUser(base.user.id, base.course.id, false, false);
+      markEnrollmentComplete(base.user.id, base.course.id);
+
+      const stats = testDb
+        .select()
+        .from(schema.userStats)
+        .where(eq(schema.userStats.userId, base.user.id))
+        .get();
+      expect(stats?.totalPoints).toBe(100);
+    });
+
+    it("does not award points twice when called twice", () => {
+      enrollUser(base.user.id, base.course.id, false, false);
+      markEnrollmentComplete(base.user.id, base.course.id);
+      markEnrollmentComplete(base.user.id, base.course.id);
+
+      const stats = testDb
+        .select()
+        .from(schema.userStats)
+        .where(eq(schema.userStats.userId, base.user.id))
+        .get();
+      expect(stats?.totalPoints).toBe(100);
+    });
+
+    it("triggers level advancement when points cross a threshold", () => {
+      enrollUser(base.user.id, base.course.id, false, false);
+      markEnrollmentComplete(base.user.id, base.course.id);
+
+      const stats = testDb
+        .select()
+        .from(schema.userStats)
+        .where(eq(schema.userStats.userId, base.user.id))
+        .get();
+      expect(stats?.currentLevel).toBe(2);
     });
   });
 

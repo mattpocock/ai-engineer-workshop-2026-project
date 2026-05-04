@@ -7,7 +7,9 @@ import {
   lessons,
   lessonProgress,
   LessonProgressStatus,
+  PointAction,
 } from "~/db/schema";
+import { awardPoints } from "~/services/gamificationService";
 
 // ─── Enrollment Service ───
 // Handles enrollment, unenrollment, duplicate prevention, and enrollment validation.
@@ -111,7 +113,7 @@ export function unenrollUser(userId: number, courseId: number) {
 }
 
 export function markEnrollmentComplete(userId: number, courseId: number) {
-  return db
+  const result = db
     .update(enrollments)
     .set({ completedAt: new Date().toISOString() })
     .where(
@@ -119,6 +121,10 @@ export function markEnrollmentComplete(userId: number, courseId: number) {
     )
     .returning()
     .get();
+
+  awardPoints(userId, PointAction.CourseComplete, courseId);
+
+  return result;
 }
 
 export function getUserEnrolledCourses(userId: number) {
