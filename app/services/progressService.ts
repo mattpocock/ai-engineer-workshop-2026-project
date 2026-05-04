@@ -84,9 +84,9 @@ export function markLessonComplete(userId: number, lessonId: number) {
       .get();
   }
 
-  awardPoints(userId, PointAction.LessonComplete, lessonId);
+  const pointsEarned = awardPoints(userId, PointAction.LessonComplete, lessonId);
 
-  return progress;
+  return { ...progress, pointsEarned };
 }
 
 export function markLessonInProgress(userId: number, lessonId: number) {

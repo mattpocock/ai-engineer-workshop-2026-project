@@ -6,8 +6,10 @@ import {
   quizOptions,
   quizAttempts,
   quizAnswers,
+  PointAction,
 } from "~/db/schema";
 import Database from "better-sqlite3";
+import { awardPoints } from "~/services/gamificationService";
 
 const rawDb = new Database("data.db");
 
@@ -260,6 +262,10 @@ export function computeResult(
       }
     }
 
+    const pointsEarned = passed
+      ? awardPoints(userId, PointAction.QuizPass, quizId)
+      : 0;
+
     return {
       attemptId: attempt.id,
       score: scoreValue,
@@ -268,6 +274,7 @@ export function computeResult(
       totalCorrect: correct,
       totalQuestions: total,
       questionResults,
+      pointsEarned,
     };
   } catch (e) {
     console.log(e);

@@ -301,8 +301,8 @@ export async function action({ params, request }: Route.ActionArgs) {
   const intent = formData.get("intent");
 
   if (intent === "mark-complete") {
-    markLessonComplete(currentUserId, lessonId);
-    return { success: true };
+    const { pointsEarned } = markLessonComplete(currentUserId, lessonId);
+    return { success: true, pointsEarned };
   }
 
   if (intent === "submit-quiz") {
@@ -393,16 +393,22 @@ export default function LessonViewer({ loaderData }: Route.ComponentProps) {
     fetcher.formData?.get("intent") === "mark-complete";
 
   const justCompleted = fetcher.data?.success;
+  const lessonPointsEarned = fetcher.data?.pointsEarned ?? 0;
 
   const isCompleted =
     lessonStatus === LessonProgressStatus.Completed || justCompleted;
 
-  // Navigate to next lesson after marking complete
+  // Navigate to next lesson after marking complete; toast points if first completion
   useEffect(() => {
-    if (justCompleted && nextLesson) {
-      navigate(`/courses/${course.slug}/lessons/${nextLesson.id}`);
+    if (justCompleted) {
+      if (lessonPointsEarned > 0) {
+        toast.success(`+${lessonPointsEarned} pts`);
+      }
+      if (nextLesson) {
+        navigate(`/courses/${course.slug}/lessons/${nextLesson.id}`);
+      }
     }
-  }, [justCompleted, nextLesson, course.slug, navigate]);
+  }, [justCompleted, lessonPointsEarned, nextLesson, course.slug, navigate]);
 
   const quizResult = quizFetcher.data?.quizResult ?? null;
   const isSubmittingQuiz = quizFetcher.state !== "idle";
@@ -792,6 +798,7 @@ function QuizSection({
     grade: string;
     totalCorrect: number;
     totalQuestions: number;
+    pointsEarned: number;
     questionResults: Array<{
       questionId: number;
       correct: boolean;
@@ -811,9 +818,9 @@ function QuizSection({
   useEffect(() => {
     if (quizResult && !retaking) {
       if (quizResult.passed) {
-        toast.success(
-          `Quiz passed! Score: ${Math.round(quizResult.score * 100)}%`
-        );
+        if (quizResult.pointsEarned > 0) {
+          toast.success(`Quiz passed! +${quizResult.pointsEarned} pts`);
+        }
       } else {
         toast.error(
           `Quiz not passed. Score: ${Math.round(quizResult.score * 100)}%`
